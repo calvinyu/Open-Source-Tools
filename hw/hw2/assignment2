@@ -110,7 +110,7 @@ END{ print sum/stateCnt}
 
 cat 2.csv | awk '
 BEGIN{ max = 0; FS=","}
-$3>$5{count[$10]++}
-count[$10] > max {maxP = $10; max = count[$10]}
+{score[$10]+=$3; count[$10]++}
+score[$10]/count[$10] > max {maxP = $10; max = score[$10]/count[$10]}
 END{print maxP}
 '
