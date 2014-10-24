@@ -1,0 +1,6 @@
+BEGIN{sum=0;}
+sum%10==0 && sum !=0  {print line; line = ""}
+sum%10==0{ line = $0}
+sum%10!=0{ line = line "," $0}
+{sum++}
+END{}
