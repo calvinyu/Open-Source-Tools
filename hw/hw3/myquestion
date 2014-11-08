@@ -118,15 +118,16 @@ elif [[ $1 == answer ]]; then  #start parsing create
 elif [[ $1 == list ]]; then
   #start
   if [[ $# -eq 1 ]]; then
-    userpath=/home/unixtool/data/question/users
-    for user in $userpath
+    #userlist=/home/unixtool/data/question/users
+    userlist=~/list
+    while read user;
     do
       path=~/../$user/.question/questions/*
       for files in $path
       do
         echo $user/$(echo $files | cut -d/ -f8)
       done
-    done
+    done < $userlist
   elif [[ $# -eq 2 ]]; then
     user=$2
     path=~/../$user/.question/questions/*
