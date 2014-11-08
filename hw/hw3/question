@@ -1,0 +1,233 @@
+#!/bin/bash
+
+function checkIfDirExists {
+	if [[ ! -d $1 ]]; then
+		SAVEIFS=$IFS
+		IFS=
+		mkdir -m 755 $1
+		IFS=$SAVEIFS
+		return 0
+	else
+		return 1
+	fi
+}
+
+if [[ $# -eq 0 ]]; then
+	echo "no option is given!!" > /dev/stderr
+	exit 1
+fi
+
+if [[ $1 == create ]]; then
+	if [[ $# -gt 3 ]]; then
+		echo "too many arguments" > /dev/stderr
+		exit 1
+	elif [[ $# -lt 2 ]]; then
+		echo "too few arguments" > /dev/stderr
+		exit 1
+	elif [[ $2 = */* ]]; then
+		echo "invalid arguments detected: ""$2" > /dev/stderr
+		exit 1
+	elif [[ -f $HOME/.question/questions/$2 ]]; then
+		echo "the question name already exists" > /dev/stderr
+		exit 1
+	elif [[ $# -eq 3 ]]; then
+		content=$(echo $3)
+	else
+		echo "please enter the question:"
+		read content
+	fi
+	if [[ $content = "" ]]; then
+		echo "not added! empty question" > /dev/stderr
+		exit 1
+	elif [[ $content = *====* ]]; then
+		echo "invalid question" > /dev/stderr
+		exit 1
+	fi
+	checkIfDirExists "$HOME/.question"
+	checkIfDirExists "$HOME/.question/questions"
+	touch "$HOME/.question/questions/$2"
+	chmod 705 "$HOME/.question/questions/$2"
+	echo $content >> "$HOME/.question/questions/$2"
+	exit 0
+fi
+
+if [[ $1 == answer ]]; then
+	if [[ $# -lt 3 ]]; then
+		echo "too few arguments" > /dev/stderr
+		exit 1
+	elif [[ $# -gt 4 ]]; then
+		echo "too many arguments" > /dev/stderr
+		exit 1
+	elif [[ ! $2 = */* ]]; then
+		echo "Invalid arguments: ""$2" > /dev/stderr
+		exit 1
+	fi
+	user=$(echo $2 | cut -d/ -f1)
+	qname=$(echo $2 | cut -d/ -f2)
+	if [[ ! (-f "/home/$user/.question/questions/$qname") ]]; then
+		echo "No such question: "$user"/"$qname > /dev/stderr
+		exit 1
+	elif [[ $3 = */* ]]; then
+		echo "Invalid arguments: ""$3" > /dev/stderr
+		exit 1
+	elif [[ -f $HOME/.question/answers/$user/$qname/$3 ]]; then
+		echo "The answer name exists already" > /dev/stderr
+		exit 1
+	elif [[ $# > 3 ]]; then
+		content=$(echo $4)
+	else
+		echo "please enter the answer:"
+		read content
+	fi
+	if [[ $content = *====* ]]; then
+		echo "not added! the answer contains \"====\"" > /dev/stderr
+		exit 1
+	elif [[ $content = "" ]]; then
+		echo "not added! empty answer" > /dev/stderr
+		exit 1
+	fi
+	checkIfDirExists "$HOME/.question"
+	checkIfDirExists "$HOME/.question/answers"
+	checkIfDirExists "$HOME/.question/answers/$user"
+	checkIfDirExists "$HOME/.question/answers/$user/$qname"
+	SAVEIFS=$IFS
+	IFS=
+	touch "$HOME/.question/answers/$user/$qname/$3"
+	chmod 705 "$HOME/.question/answers/$user/$qname/$3"
+	echo $content >> "$HOME/.question/answers/$user/$qname/$3"
+	IFS=SAVEIFS
+	exit 0
+fi
+
+if [[ $1 == list ]]; then
+	if [ $# -lt 1 ]; then
+		echo "too few arguments" > /dev/stderr
+		exit 1
+	elif [ $# -gt 2 ]; then
+		echo "too many arguments" > /dev/stderr
+		exit 1
+	elif [[ ! $2 == "" ]]; then
+		if [[ $2 = */* ]]; then
+			echo "Invalid arguments: ""$2" > /dev/stderr
+			exit 1
+		elif [[ ! (-d "/home/$2/.question") ]]; then
+			#echo "No such user" > /dev/stderr
+			#exit 1
+			exit 0
+		else
+			ls "/home/$2/.question/questions" | sed "s/^/$2\//"
+		fi
+	else
+		while read line; do
+			ls "/home/$line/.question/questions" | sed "s/^/$line\//"
+		done < "/home/unixtool/data/question/users"
+	fi
+	exit 0
+fi
+
+if [[ $1 == vote ]]; then
+	if [ $# -lt 3 ]; then
+		echo "too few arguments" > /dev/stderr
+		exit 1
+	elif [ $# -gt 4 ]; then
+		echo "too many arguments" > /dev/stderr
+		exit 1
+	elif [[ !($2 = up || $2 = down) ]]; then
+		echo "Invalid arguments: ""$2" > /dev/stderr
+		exit 1
+	elif [[ ! $3 = */* ]]; then
+		echo "Invalid arguments: ""$3" > /dev/stderr
+		exit 1
+	fi
+	user=$(echo $3 | cut -d/ -f1)
+	qname=$(echo $3 | cut -d/ -f2)
+	if [[ ! (-f "/home/$user/.question/questions/$qname") ]]; then
+		echo "No such question exists" > /dev/stderr
+		exit 1
+	elif [[ $4 == "" ]]; then
+		checkIfDirExists "$HOME/.question"
+		checkIfDirExists "$HOME/.question/votes"
+		checkIfDirExists "$HOME/.question/votes/$user"
+		touch "$HOME/.question/votes/$user/$qname"
+		chmod 705 "$HOME/.question/votes/$user/$qname"
+		sed -i -e "/^up$/d" "$HOME/.question/votes/$user/$qname"
+		sed -i -e "/^down$/d" "$HOME/.question/votes/$user/$qname"
+		echo $2 >> "$HOME/.question/votes/$user/$qname"
+	else
+		if [[ ! $4 = */* ]]; then
+			echo "Invalid arguments: ""$4" > /dev/stderr
+			exit 1
+		fi
+		auser=$(echo $4 | cut -d/ -f1)
+		aname=$(echo $4 | cut -d/ -f2)
+		if [[ ! -f "/home/$auser/.question/answers/$user/$qname/$aname" ]]; then
+			echo "The answer does note exist" > /dev/stderr
+			exit 1
+		fi
+		checkIfDirExists "$HOME/.question"
+		checkIfDirExists "$HOME/.question/votes"
+		checkIfDirExists "$HOME/.question/votes/$user"
+		touch "$HOME/.question/votes/$user/$qname"
+		chmod 705 "$HOME/.question/votes/$user/$qname"
+		sed -i -e "/up $auser\/$aname/d" "$HOME/.question/votes/$user/$qname"
+		sed -i -e "/down $auser\/$aname/d" "$HOME/.question/votes/$user/$qname"
+		echo $2" "$auser"/"$aname >> "$HOME/.question/votes/$user/$qname"
+	fi
+	exit 0
+fi
+
+if [[ $1 == view ]]; then
+	if [ $# -le 1 ]; then
+		echo "too few arguments" > /dev/stderr
+		exit 1
+	fi
+	for file in "$@"; do
+		if [[ $file == view ]]; then
+			continue
+		fi
+		user=$(echo $file | cut -d/ -f1)
+		qname=$(echo $file | cut -d/ -f2)
+		if [[ ! (-f "/home/$user/.question/questions/$qname") ]]; then
+			echo "No such question id exists: ""$file" > /dev/stderr
+			exit 1
+		else
+			count=0
+			while read usr; do
+				if [[ -f "/home/$usr/.question/votes/$user/$qname" ]]; then
+				 	count=$((count+$(sed -n -e "/^up\s*$/p" "/home/$usr/.question/votes/$user/$qname" | wc -l)))
+				 	count=$((count-$(sed -n -e "/^down\s*$/p" "/home/$usr/.question/votes/$user/$qname" | wc -l)))
+				fi
+			done < /home/unixtool/data/question/users
+			echo $count" "$user"/"$qname
+			cat "/home/$user/.question/questions/$qname"
+			echo "===="
+			while read usr; do
+				if [[ -d "/home/$usr/.question/answers/$user/$qname" ]]; then
+					SAVEIFS=$IFS
+					IFS=$(echo -en "\n\b")
+					for ans in $(ls "/home/$usr/.question/answers/$user/$qname"); do
+						count=0
+						while read u; do
+							if [[ -f "/home/$u/.question/votes/$user/$qname" ]]; then							
+						 		count=$((count+$(sed -n -e "/up $usr\/$ans/p" "/home/$u/.question/votes/$user/$qname" | wc -l)))
+						 		count=$((count-$(sed -n -e "/down $usr\/$ans/p" "/home/$u/.question/votes/$user/$qname" | wc -l)))
+							fi
+						done < /home/unixtool/data/question/users
+						echo $count" "$usr"/"$ans" @"$user"/"$qname
+						cat "/home/$usr/.question/answers/$user/$qname/$ans"
+						echo "===="
+					done
+					IFS=$SAVEIFS
+				fi
+			done < /home/unixtool/data/question/users
+		fi
+	done
+	exit 0
+fi
+
+echo "No such option exists-create/answer/vote/view: $1" > /dev/stderr
+exit 1
+
+
+	
+	

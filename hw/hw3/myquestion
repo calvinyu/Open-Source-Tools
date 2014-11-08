@@ -1,0 +1,143 @@
+#!/bin/bash
+
+if [[ $# -eq 0 ]]; then
+  echo "no option is given!!" >&2
+  exit 1
+fi
+
+#check dir
+if [[ ! -d $HOME/.question ]]; then
+  mkdir $HOME/.question
+fi
+if [[ ! -d $HOME/.question/questions ]]; then
+  mkdir $HOME/.question/questions
+fi
+if [[ ! -d $HOME/.question/answers ]]; then
+  mkdir $HOME/.question/answers
+fi
+if [[ ! -d $HOME/.question/votes ]]; then
+  mkdir $HOME/.question/votes
+fi
+
+#start 
+if [[ $1 == create ]]; then
+  #start parsing create
+  #check number of arguments
+  if [[ $# -ge 2 ]] && [[ $# -le 3 ]]; then
+    #check name
+    name=$2
+    if [[ $name == *\/* ]]; then
+      echo "No foward slashes is allowed in a name" >&2 
+      exit 1
+    fi
+    #read content
+    if [[ $# -eq 2 ]]; then
+      read question
+    else
+      question=$3
+    fi
+    #check question
+    if [[ $question == "" ]]; then
+      echo "question can't be empty" >&2
+      exit 1
+    elif [[ $question == *====* ]]; then
+      echo "question can't contain ====" >&2
+      exit 1
+    fi
+    #check if exists
+    filename=~/.question/questions/$name
+    if [[ -f $filename ]]; then
+      echo "this question already exists" >&2
+      exit 1
+    else
+      echo $question > $filename
+      exit 0
+    fi
+  else
+    echo "The wrong number of arguments are givin to an option(too few too many)" >&2
+    exit 1
+  fi
+elif [[ $1 == answer ]]; then  #start parsing create
+  #check number of arguments
+  if [[ $# -ge 3 ]] && [[ $# -le 4 ]]; then
+    qid=$2
+    name=$3
+    #check questionid
+    if [[ ! $qid == *\/* ]]; then
+      echo "invalid arguments" >&2
+    fi
+    qlogin=$(echo $qid | cut -d/ -f1)
+    qname=$(echo $qid | cut -d/ -f2)
+    #check name
+    if [[ $name == *\/* ]]; then
+      echo "No foward slashes is allowed in a name" >&2 
+      exit 1
+    fi
+    if [[ $qname == *\/* ]]; then
+      echo "No foward slashes is allowed in a question name" >&2 
+      exit 1
+    fi
+    #read content
+    if [[ $# -eq 3 ]]; then
+      read question
+    else
+      question=$4
+    fi
+    #check question
+    if [[ $question == "" ]]; then
+      echo "question can't be empty" >&2
+      exit 1
+    elif [[ $question == *====* ]]; then
+      echo "question can't contain ====" >&2
+      exit 1
+    fi
+    #check if equestion exists
+    qfilename=~/../$qlogin/.question/questions/$qname
+    if [[ ! -f $qfilename ]]; then
+      echo "no such question:", $qfilename >&2
+    fi
+    #check if if user exists
+    filedir=$HOME/.question/answers/$qlogin
+    if [[ ! -d $diledir ]]; then
+      mkdir $filedir
+    fi
+    #check if answer exists
+    if [[ -f $filedir/$name ]]; then
+      echo "this answer already exists" >&2
+      exit 1
+    else
+      echo $question > $filedir/$name
+      exit 0
+    fi
+  else
+    echo "The wrong number of arguments are givin to an option(too few too many)" >&2
+    exit 1
+  fi
+  echo "answer"
+elif [[ $1 == list ]]; then
+  #start
+  if [[ $# -eq 1 ]]; then
+    userpath=/home/unixtool/data/question/users/*
+    for user in $userpath
+    do
+      path=~/../$user/.question/questions/*
+      for files in $path
+      do
+        echo $user/$(echo $files | cut -d/ -f8)
+      done
+    done
+  elif [[ $# -eq 2 ]]; then
+    user=$2
+    path=~/../$user/.question/questions/*
+    for files in $path
+    do
+      echo $user/$(echo $files | cut -d/ -f8)
+    done
+  fi
+elif [[ $1 == vote ]]; then
+  echo "vote"
+elif [[ $1 == view ]]; then
+  echo "view"
+else
+  echo "No such option exists"
+fi
