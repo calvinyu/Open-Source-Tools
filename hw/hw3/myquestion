@@ -95,10 +95,11 @@ elif [[ $1 == answer ]]; then  #start parsing create
     qfilename=~/../$qlogin/.question/questions/$qname
     if [[ ! -f $qfilename ]]; then
       echo "no such question:", $qfilename >&2
+      exit 1
     fi
     #check if if user exists
     filedir=$HOME/.question/answers/$qlogin
-    if [[ ! -d $diledir ]]; then
+    if [[ ! -d $filedir ]]; then
       mkdir $filedir
     fi
     #check if answer exists
@@ -117,7 +118,7 @@ elif [[ $1 == answer ]]; then  #start parsing create
 elif [[ $1 == list ]]; then
   #start
   if [[ $# -eq 1 ]]; then
-    userpath=/home/unixtool/data/question/users/*
+    userpath=/home/unixtool/data/question/users
     for user in $userpath
     do
       path=~/../$user/.question/questions/*
