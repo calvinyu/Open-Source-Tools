@@ -118,8 +118,8 @@ elif [[ $1 == answer ]]; then  #start parsing create
 elif [[ $1 == list ]]; then
   #start
   if [[ $# -eq 1 ]]; then
-    #userlist=/home/unixtool/data/question/users
-    userlist=~/list
+    userlist=/home/unixtool/data/question/users
+    #userlist=~/list
     while read user;
     do
       path=~/../$user/.question/questions/*
